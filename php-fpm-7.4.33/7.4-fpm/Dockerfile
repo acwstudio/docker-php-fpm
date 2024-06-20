@@ -315,6 +315,16 @@ RUN set -eux \
     && rm -f /usr/local/etc/php/php.ini \
     && true
 
+# optionally install bash
+RUN apk add --no-cache bash
+
+# optionally install symfony-cli
+RUN curl -o /usr/local/bin/composer https://getcomposer.org/download/latest-stable/composer.phar \
+    && chmod +x /usr/local/bin/composer
+
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | bash \
+    && apk add symfony-cli
+
 # Copy util scripts
 COPY 7.4-fpm/envsubst.sh /envsubst.sh
 COPY 7.4-fpm/entrypoint.sh /entrypoint.sh

@@ -11,3 +11,5 @@
 /*.bin
 *.env
 /web/app-phpinfo/phpinfo/
+/web/app-uvi-api/
+/web/app-framework/
