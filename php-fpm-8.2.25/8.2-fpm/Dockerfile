@@ -1,17 +1,17 @@
-FROM php:8.0.30-fpm-alpine3.16
+FROM php:8.2.25-fpm-alpine3.19
 
-LABEL Maintainer="Jose Quintana <git.io/joseluisq>" \
-    Description="PHP-FPM v8.0 with essential extensions on top of Alpine Linux."
+LABEL Maintainer="Jose Quintana <joseluisq.net>" \
+    Description="PHP-FPM v8.2 with essential extensions on top of Alpine Linux."
 
 # Composer - https://getcomposer.org/download/
-ARG COMPOSER_VERSION="2.5.8"
-ARG COMPOSER_SUM="f07934fad44f9048c0dc875a506cca31cc2794d6aebfc1867f3b1fbf48dce2c5"
+ARG COMPOSER_VERSION="2.8.1"
+ARG COMPOSER_SUM="930b376fbd2147a623ea7b704eb9d3b8b0d6072992207aa0535aa21f6f05378e"
 
 # Swoole - https://github.com/swoole/swoole-src
-ARG SWOOLE_VERSION="5.0.3"
+ARG SWOOLE_VERSION="5.1.5"
 
 # Phalcon - https://github.com/phalcon/cphalcon
-# ARG PHALCON_VERSION="5.1.2"
+ARG PHALCON_VERSION="5.8.0"
 
 # Install dependencies
 RUN set -eux \
@@ -25,12 +25,10 @@ RUN set -eux \
         icu-libs \
         imagemagick \
         imap \
-        libexecinfo \
         libffi \
         libgmpxx \
         libintl \
         libjpeg-turbo \
-        libmcrypt \
         libpng \
         libpq \
         librdkafka \
@@ -40,13 +38,16 @@ RUN set -eux \
         libxpm \
         libxslt \
         libzip \
+        lz4-libs \
         make \
         rabbitmq-c \
         tidyhtml \
         tzdata \
         unixodbc \
         vips \
-        yaml
+        yaml \
+        zstd-libs \
+    && true
 
 #############################################
 ### Install and enable PHP extensions
@@ -71,9 +72,7 @@ RUN set -eux \
         imap-dev \
         krb5-dev \
         libc-dev \
-        libexecinfo-dev \
         libjpeg-turbo-dev \
-        libmcrypt-dev \
         libpng-dev \
         librdkafka-dev \
         libssh2-dev \
@@ -82,6 +81,7 @@ RUN set -eux \
         libxpm-dev \
         libxslt-dev \
         libzip-dev \
+        lz4-dev \
         openssl-dev \
         pcre-dev \
         pkgconf \
@@ -92,6 +92,7 @@ RUN set -eux \
         vips-dev \
         yaml-dev \
         zlib-dev \
+        zstd-dev \
 \
 # Workaround for rabbitmq linking issue
     && ln -s /usr/lib /usr/local/lib64 \
@@ -119,14 +120,7 @@ RUN set -eux \
     && true \
 \
 # Install amqp
-# Note: Build from source until the pecl release is ready for PHP 8
-    && git clone --depth=1 https://github.com/php-amqp/php-amqp \
-    && cd php-amqp \
-    && phpize && ./configure \
-    && make -j$(nproc) \
-    && make install \
-    && cd ../ \
-    && rm -rf php-amqp \
+    && pecl install amqp \
     && docker-php-ext-enable amqp \
     && true \
 \
@@ -165,13 +159,23 @@ RUN set -eux \
     && docker-php-ext-enable imagick \
     && true \
 \
+# Install igbinary
+    && pecl install igbinary \
+    && docker-php-ext-enable igbinary \
+\
 # Install intl
     && docker-php-ext-install -j$(nproc) intl \
     && true \
 \
-# Install mcrypt
-    && pecl install mcrypt \
-    && docker-php-ext-enable mcrypt \
+# Install lz4
+    && git clone https://github.com/kjdev/php-ext-lz4 /opt/lz4 \
+    && cd /opt/lz4 \
+    && git checkout $(git tag | grep -E '^[.0-9]+$' | sort -V | tail -1) \
+    && phpize \
+    && ./configure --enable-lz4 --with-lz4-includedir=/usr \
+    && make -j$(nproc) \
+    && make install \
+    && docker-php-ext-enable lz4 \
     && true \
 \
 # Install memcache
@@ -182,6 +186,11 @@ RUN set -eux \
 # Install mongodb
     && pecl install mongodb \
     && docker-php-ext-enable mongodb \
+    && true \
+\
+# Install msgpack
+    && pecl install msgpack \
+    && docker-php-ext-enable msgpack \
     && true \
 \
 # Install mysqli
@@ -210,17 +219,13 @@ RUN set -eux \
     && docker-php-ext-install -j$(nproc) pcntl \
     && true \
 \
-# TEMPORARILY DDISABLED
-# # Install phalcon
-#     && git clone --depth=1 --branch=v${PHALCON_VERSION} https://github.com/phalcon/cphalcon.git \
-#     && cd cphalcon/ext \
-#     && phpize \
-#     && ./configure --enable-phalcon CFLAGS="-O2 -Wall -fvisibility=hidden -flto -DZEPHIR_RELEASE=1 --param ggc-min-expand=0 --param ggc-min-heapsize=8192" \
-#     && make -s \
-#     && make -s install \
-#     && docker-php-ext-enable phalcon \
-#     && true \
-# \
+# Install phalcon
+    && git clone --depth=1 --branch=v${PHALCON_VERSION} https://github.com/phalcon/cphalcon.git /opt/phalcon \
+    && cd /opt/phalcon/build \
+    && sh ./install \
+    && docker-php-ext-enable phalcon \
+    && true \
+\
 # Install pdo_pgsql
     && docker-php-ext-install -j$(nproc) pdo_pgsql \
     && true \
@@ -247,7 +252,9 @@ RUN set -eux \
     && true \
 \
 # Install redis
-    && pecl install redis \
+    && pecl install --configureoptions \
+        'enable-redis-igbinary="yes" enable-redis-zstd="yes" enable-redis-msgpack="yes" enable-redis-lz4="yes"' \
+        redis \
     && docker-php-ext-enable redis \
     && true \
 \
@@ -266,7 +273,7 @@ RUN set -eux \
     && true \
 \
 # Install sockets, sysvmsg, sysvsem, sysvshm (also needed by swoole)
-    && docker-php-ext-install -j$(nproc) \
+    && CFLAGS="${CFLAGS:=} -D_GNU_SOURCE" docker-php-ext-install -j$(nproc) \
         sockets \
         sysvmsg \
         sysvsem \
@@ -274,26 +281,39 @@ RUN set -eux \
     && docker-php-source extract \
     && true \
 \
-# Install swoole
-    && mkdir /usr/src/php/ext/swoole \
-    && curl -Lo swoole.tar.gz https://github.com/swoole/swoole-src/archive/v${SWOOLE_VERSION}.tar.gz \
-    && tar xfz swoole.tar.gz --strip-components=1 -C /usr/src/php/ext/swoole \
-    && docker-php-ext-configure swoole \
-            --enable-mysqlnd \
-            --enable-sockets \
-            --enable-openssl \
-            --enable-swoole-curl \
-    && docker-php-ext-install -j$(nproc) swoole \
-    && rm -rf swoole.tar.gz $HOME/.composer/*-old.phar \
-    && docker-php-ext-enable swoole \
-    && true \
+# Install swoole (64-bit targets only)
+# https://github.com/swoole/swoole-src/issues/5158
+    && if [ "$(uname -m)" = "x86_64" ] || [ "$(uname -m)" = "aarch64" ]; then \
+        mkdir /usr/src/php/ext/swoole; \
+        curl -Lo swoole.tar.gz https://github.com/swoole/swoole-src/archive/v${SWOOLE_VERSION}.tar.gz; \
+        tar xfz swoole.tar.gz --strip-components=1 -C /usr/src/php/ext/swoole; \
+        docker-php-ext-configure swoole \
+                --enable-mysqlnd \
+                --enable-sockets \
+                --enable-openssl \
+                --enable-swoole-curl; \
+        docker-php-ext-install -j$(nproc) swoole; \
+        rm -rf swoole.tar.gz $HOME/.composer/*-old.phar; \
+        docker-php-ext-enable swoole; \
+        true; \
+    fi \
 \
 # Install tidy
     && docker-php-ext-install -j$(nproc) tidy \
     && true \
 \
+# Install uuid
+    && pecl install uuid \
+    && docker-php-ext-enable uuid \
+    && true \
+\
 # Install xsl
     && docker-php-ext-install -j$(nproc) xsl \
+    && true \
+\
+# Install xdebug
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
     && true \
 \
 # Install yaml
@@ -311,9 +331,15 @@ RUN set -eux \
     && docker-php-ext-install -j$(nproc) zip \
     && true \
 \
+# Install zstd
+    && pecl install zstd \
+    && docker-php-ext-enable zstd \
+    && true \
+\
 # Clean up build packages
     && docker-php-source delete \
     && apk del .build-deps \
+    && rm -rf /tmp/* \
     && true
 
 RUN set -eux \
@@ -335,9 +361,9 @@ RUN set -eux \
     && true
 
 # Copy PHP-FPM configuration files
-COPY 8.0-fpm/php-fpm.tmpl.conf /var/data/php-fpm/php-fpm.tmpl.conf
-COPY 8.0-fpm/www.tmpl.conf /var/data/php-fpm/www.tmpl.conf
-COPY 8.0-fpm/php.tmpl.ini /var/data/php-fpm/default-php.tmpl.ini
+COPY 8.2-fpm/php-fpm.tmpl.conf /var/data/php-fpm/php-fpm.tmpl.conf
+COPY 8.2-fpm/www.tmpl.conf /var/data/php-fpm/www.tmpl.conf
+COPY 8.2-fpm/php.tmpl.ini /var/data/php-fpm/default-php.tmpl.ini
 
 RUN set -eux \
 # PHP-FPM templates directory
@@ -349,7 +375,7 @@ RUN set -eux \
 # Perform PHP-FPM testing
     && echo "Performing PHP-FPM tests..." \
     && echo "date.timezone=UTC" > /usr/local/etc/php/php.ini \
-    && php -v | grep -oE 'PHP\s[.0-9]+' | grep -oE '[.0-9]+' | grep '^8.0' \
+    && php -v | grep -oE 'PHP\s[.0-9]+' | grep -oE '[.0-9]+' | grep '^8.2' \
     && /usr/local/sbin/php-fpm --test \
 \
     && PHP_ERROR="$( php -v 2>&1 1>/dev/null )" \
@@ -365,8 +391,8 @@ RUN set -eux \
     && true
 
 # Copy util scripts
-COPY 8.0-fpm/envsubst.sh /envsubst.sh
-COPY 8.0-fpm/entrypoint.sh /entrypoint.sh
+COPY 8.2-fpm/envsubst.sh /envsubst.sh
+COPY 8.2-fpm/entrypoint.sh /entrypoint.sh
 
 STOPSIGNAL SIGQUIT
 
@@ -379,7 +405,7 @@ CMD ["php-fpm"]
 # Metadata
 LABEL org.opencontainers.image.vendor="Jose Quintana" \
     org.opencontainers.image.url="https://github.com/joseluisq/alpine-php-fpm" \
-    org.opencontainers.image.title="PHP-FPM v8.0 Alpine" \
-    org.opencontainers.image.description="PHP-FPM v8.0 with essential extensions on top of Alpine Linux." \
+    org.opencontainers.image.title="PHP-FPM v8.2 Alpine" \
+    org.opencontainers.image.description="PHP-FPM v8.2 with essential extensions on top of Alpine Linux." \
     org.opencontainers.image.version="$PHP_VERSION" \
     org.opencontainers.image.documentation="https://github.com/joseluisq/alpine-php-fpm"

@@ -1,21 +1,32 @@
+REPOSITORY ?= joseluisq
+TAG ?= latest
+VERSION ?= 8.3
+
+
+build:
+	docker build --progress=plain --network=host \
+		-t $(REPOSITORY)/php-fpm:$(TAG) \
+		-f $(VERSION)-fpm/Dockerfile .
+.PHONY: build
+
 dev:
 	@php -S localhost:8088 -t .
 .PHONY: dev
 
-buildx-fpm-74:
-	@echo "Building PHP 7.4 Docker images (linux/amd64,linux/arm64)..."
-	@docker buildx build -t joseluisq/php-fpm:7.4 --platform linux/amd64,linux/arm64 -f 7.4-fpm/Dockerfile .
-.PHONY: buildx-fpm-74
-
-buildx-fpm-80:
-	@echo "Building PHP 8.0 Docker images (linux/amd64,linux/arm64)..."
-	@docker buildx build -t joseluisq/php-fpm:8.0 --platform linux/amd64,linux/arm64 -f 8.0-fpm/Dockerfile .
-.PHONY: buildx-fpm-80
-
 buildx-fpm-81:
-	@echo "Building PHP 8.1 Docker images (linux/amd64,linux/arm64)..."
+	@echo "Building PHP 8.1 Docker images ()..."
 	@docker buildx build -t joseluisq/php-fpm:8.1 --platform linux/amd64,linux/arm64 -f 8.1-fpm/Dockerfile .
 .PHONY: buildx-fpm-81
+
+buildx-fpm-82:
+	@echo "Building PHP 8.2 Docker images (linux/amd64,linux/arm64)..."
+	@docker buildx build -t joseluisq/php-fpm:8.2 --platform linux/amd64,linux/arm64 -f 8.2-fpm/Dockerfile .
+.PHONY: buildx-fpm-82
+
+buildx-fpm-83:
+	@echo "Building PHP 8.3 Docker images (linux/amd64,linux/arm64)..."
+	@docker buildx build -t joseluisq/php-fpm:8.3 --platform linux/amd64,linux/arm64 -f 8.3-fpm/Dockerfile .
+.PHONY: buildx-fpm-83
 
 run:
 	@docker run --rm -it \

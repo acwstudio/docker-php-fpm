@@ -1,5 +1,8 @@
 FROM php:7.4.33-fpm-alpine3.16
 
+LABEL Maintainer="Jose Quintana <git.io/joseluisq>" \
+    Description="PHP-FPM v7.4 with essential extensions on top of Alpine Linux."
+
 # Composer - https://getcomposer.org/download/
 ARG COMPOSER_VERSION="2.4.4"
 ARG COMPOSER_SUM="c252c2a2219956f88089ffc242b42c8cb9300a368fd3890d63940e4fc9652345"
@@ -37,8 +40,7 @@ RUN set -eux \
         tidyhtml \
         tzdata \
         vips \
-        yaml \
-        nano
+        yaml
 
 #############################################
 ### Install and enable PHP extensions
@@ -315,24 +317,9 @@ RUN set -eux \
     && rm -f /usr/local/etc/php/php.ini \
     && true
 
-# optionally install bash
-RUN apk add --no-cache bash
-
-# optionally install symfony-cli
-RUN curl -o /usr/local/bin/composer https://getcomposer.org/download/latest-stable/composer.phar \
-    && chmod +x /usr/local/bin/composer
-
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | bash \
-    && apk add symfony-cli
-
 # Copy util scripts
 COPY 7.4-fpm/envsubst.sh /envsubst.sh
 COPY 7.4-fpm/entrypoint.sh /entrypoint.sh
-
-# Add www-data user
-#RUN groupadd -r www-data && useradd -r -g www-data www-data
-#RUN addgroup -S www-data && adduser -S www-data -G www-data
-#USER www-data
 
 STOPSIGNAL SIGQUIT
 
@@ -341,3 +328,11 @@ ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 9000
 CMD ["php-fpm"]
 
+
+# Metadata
+LABEL org.opencontainers.image.vendor="Jose Quintana" \
+    org.opencontainers.image.url="https://github.com/joseluisq/alpine-php-fpm" \
+    org.opencontainers.image.title="PHP-FPM v7.4 Alpine" \
+    org.opencontainers.image.description="PHP-FPM v7.4 with essential extensions on top of Alpine Linux." \
+    org.opencontainers.image.version="$PHP_VERSION" \
+    org.opencontainers.image.documentation="https://github.com/joseluisq/alpine-php-fpm"

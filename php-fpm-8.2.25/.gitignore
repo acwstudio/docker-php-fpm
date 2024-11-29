@@ -10,6 +10,7 @@
 /*.html
 /*.bin
 *.env
-/.idea/
 /web/app-phpinfo/phpinfo/
-/web/app-symfony-5/
+/web/app-uvi-api/
+/web/app-framework/
+/web/app-symfony-api/
