@@ -1,1 +1,9 @@
+*** php-fpm-alpine docker github and hub.docker repositories ****
 https://github.com/joseluisq/alpine-php-fpm
+https://hub.docker.com/r/joseluisq/php-fpm/
+
+*** How to install older latavel version ***
+https://laraveldaily.com/post/how-to-install-older-laravel-version
+
+*** Examples docker compose ***
+https://github.com/docker/awesome-compose.git

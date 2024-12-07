@@ -2,7 +2,11 @@
 <module type="WEB_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/php-fpm-7.4.33/web/app-symfony-5/symfony-5/src" isTestSource="false" packagePrefix="App" />
+      <sourceFolder url="file://$MODULE_DIR$/php-fpm-7.4.33/web/app-symfony-5/symfony-5/var/cache/dev" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/php-fpm-8.2.18/web/app-uvi-api/admin-api" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/php-fpm-8.2.25/web/app-symfony-api/symfony-api/src" isTestSource="false" packagePrefix="App" />
+      <sourceFolder url="file://$MODULE_DIR$/php-fpm-8.2.25/web/app-symfony-api/symfony-api/var/cache/dev" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/php-fpm-7.4.33/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/php-fpm-8.0.30/.idea" />
     </content>

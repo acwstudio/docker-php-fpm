@@ -1,0 +1,39 @@
+services:
+  server:
+    image: nginx:1.17-alpine
+    container_name: nginx-7.4-public
+    restart: unless-stopped
+    ports:
+      - 8174:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./conf.d/:/etc/nginx/conf.d/
+      - ../PHPInfo:/var/www/html/
+    networks:
+      - public
+
+  php-fpm:
+    # NOTE: change it with the preferred PHP version
+    image: joseluisq/php-fpm:7.4
+    container_name: fpm-7.4-public
+    restart: unless-stopped
+    environment:
+      - "ENV_SUBSTITUTION_ENABLE=true"
+      - "PHP_MEMORY_LIMIT=512M"
+      - "PHP_FPM_LISTEN=9001"
+      - "PHP_SESSION_GC_MAXLIFETIME=7200"
+    volumes:
+      - ../PHPInfo:/var/www/html/
+    networks:
+#      - db_net
+#      - redis-net
+      - public
+
+# Networks
+networks:
+  public:
+    name: public
+#  redis-net:
+#    name: redis-net
+#  db_net:
+#    name: db_net
