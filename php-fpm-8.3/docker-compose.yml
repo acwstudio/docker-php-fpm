@@ -4,7 +4,7 @@ services:
     container_name: nginx-8.3-public
     restart: unless-stopped
     ports:
-      - 8183:80
+      - 8300:80
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./conf.d/:/etc/nginx/conf.d/
@@ -14,14 +14,15 @@ services:
 
   php-fpm:
     # NOTE: change it with the preferred PHP version
-    image: joseluisq/php-fpm:8.3
+    image: jose-modified/php-fpm:8.3
     container_name: fpm-8.3-public
     restart: unless-stopped
     environment:
       - "ENV_SUBSTITUTION_ENABLE=true"
       - "PHP_MEMORY_LIMIT=512M"
-      - "PHP_FPM_LISTEN=9001"
+      - "PHP_FPM_LISTEN=9083"
       - "PHP_SESSION_GC_MAXLIFETIME=7200"
+      - "PHP_DISABLE_EXTENSIONS=psr"
     volumes:
       - ../PHPInfo:/var/www/html/
     networks:

@@ -1,10 +1,10 @@
 services:
   server:
     image: nginx:1.17-alpine
-    container_name: nginx-8.0-public
+    container_name: nginx-8.4-public
     restart: unless-stopped
     ports:
-      - 8000:80
+      - 8400:80
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./conf.d/:/etc/nginx/conf.d/
@@ -14,26 +14,27 @@ services:
 
   php-fpm:
     # NOTE: change it with the preferred PHP version
-    image: jose-modified/php-fpm:8.0
-    container_name: fpm-8.0-public
+    image: jose-modified/php-fpm:8.4
+    container_name: fpm-8.4-public
     restart: unless-stopped
     environment:
       - "ENV_SUBSTITUTION_ENABLE=true"
       - "PHP_MEMORY_LIMIT=512M"
-      - "PHP_FPM_LISTEN=9080"
+      - "PHP_FPM_LISTEN=9084"
       - "PHP_SESSION_GC_MAXLIFETIME=7200"
+      - "PHP_DISABLE_EXTENSIONS=psr"
     volumes:
       - ../PHPInfo:/var/www/html/
     networks:
-      - db_net
-      - redis-net
+      #      - db_net
+      #      - redis-net
       - public
 
 # Networks
 networks:
   public:
     name: public
-  redis-net:
-    name: redis-net
-  db_net:
-    name: db_net
+#  redis-net:
+#    name: redis-net
+#  db_net:
+#    name: db_net
